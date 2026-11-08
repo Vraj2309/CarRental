@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { env } from './config/env.js';
 import authRoutes from './routes/auth.routes.js';
 import carRoutes from './routes/car.routes.js';
+import bookingRoutes from './routes/booking.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 // app.js builds the Express app; server.js starts it.
@@ -20,7 +21,7 @@ app.get('/api/health', (_req, res) => res.json({ success: true, status: 'ok' }))
 
 app.use('/api/auth', authRoutes);
 app.use('/api/cars', carRoutes);
-// Phase 3: app.use('/api/bookings', bookingRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // These two must come last: unmatched routes, then all errors.
 app.use(notFound);

@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "create-admin": "node scripts/createAdmin.js",
-    "seed:cars": "node scripts/seedCars.js"
+    "seed:cars": "node scripts/seedCars.js",
+    "race-test": "node scripts/raceTest.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

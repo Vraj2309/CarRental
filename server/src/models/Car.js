@@ -30,6 +30,11 @@ const carSchema = new mongoose.Schema(
     images: [imageSchema],
     // Soft delete: hidden cars keep their history (old bookings still point here).
     isActive: { type: Boolean, default: true },
+    // Incremented inside every booking transaction. Its value means nothing;
+    // writing to it is what makes two simultaneous bookings of the same car
+    // collide (see booking.service.js). It must be in the schema, otherwise
+    // Mongoose strips it from the update and no write happens.
+    bookingVersion: { type: Number, default: 0, select: false },
     addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
