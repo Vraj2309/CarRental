@@ -23,4 +23,8 @@ export const env = Object.freeze({
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID, // public: the browser needs it to open the popup
+    keySecret: process.env.RAZORPAY_KEY_SECRET, // private: signs and verifies payments
+  },
 });

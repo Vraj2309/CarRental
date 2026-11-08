@@ -19,8 +19,9 @@ export const getBooking = asyncHandler(async (req, res) => {
 });
 
 export const cancelBooking = asyncHandler(async (req, res) => {
-  const booking = await bookingService.cancelBooking(req.params.id, req.user);
-  res.json({ success: true, data: { booking } });
+  // refund: "not_needed" (unpaid), "refunded", or "refund_failed" (admin must retry)
+  const { booking, refund } = await bookingService.cancelBooking(req.params.id, req.user);
+  res.json({ success: true, data: { booking, refund } });
 });
 
 export const listAllBookings = asyncHandler(async (req, res) => {

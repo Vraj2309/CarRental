@@ -36,7 +36,10 @@ console.log('Status codes:', counts);
 
 const created = results.filter((r) => r.status === 201).length;
 if (created === 1) console.log('\nPASS: exactly one booking was created, the rest got 409.');
-else if (created === 0) console.log('\nNo booking created. Are these dates already booked? Try other dates.');
+else if (created === 0) {
+  console.log('\nNo booking created. Are these dates already booked? Try other dates.');
+  if (counts[429]) console.log('(429 = this user has 3 unpaid holds. Wait 15 minutes or cancel them.)');
+}
 else console.log(`\nFAIL: ${created} bookings were created for the same dates!`);
 
 const other = results.find((r) => ![201, 409].includes(r.status));

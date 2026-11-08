@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Payment Test</title>
+  <!-- Razorpay's official checkout script: it draws the payment popup. -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 32px auto; padding: 0 16px; color: #1f2933; }
+    h1 { font-size: 1.4rem; }
+    label { display: block; margin-top: 14px; font-weight: 600; font-size: .9rem; }
+    input { width: 100%; box-sizing: border-box; padding: 8px; margin-top: 4px; font: inherit; }
+    button { margin-top: 18px; padding: 10px 18px; font: inherit; font-weight: 600; cursor: pointer;
+             background: #2563eb; color: #fff; border: 0; border-radius: 6px; }
+    pre { background: #f3f4f6; padding: 12px; border-radius: 6px; white-space: pre-wrap; word-break: break-all; font-size: .85rem; }
+    .note { font-size: .85rem; color: #52606d; }
+  </style>
+</head>
+<body>
+  <h1>Razorpay payment test (development only)</h1>
+  <p class="note">Create a booking in Postman first (it starts as <b>pending</b>), then pay for it here within 15 minutes.</p>
+
+  <label for="token">User token (from the Login request)</label>
+  <input id="token" placeholder="eyJhbGciOi..." />
+
+  <label for="bookingId">Booking id (from the Create booking response)</label>
+  <input id="bookingId" placeholder="6af0..." />
+
+  <button id="pay">Pay with Razorpay</button>
+  <button id="mock" style="background:#6b7280">Simulate payment (mock mode)</button>
+  <p class="note">Use "Simulate payment" when the server has no Razorpay keys. It confirms the booking without real or test money.</p>
+
+  <h2>Log</h2>
+  <pre id="log">Waiting...</pre>
+
+<script>
+  const logEl = document.getElementById('log');
+  const log = (title, data) => {
+    logEl.textContent += `\n\n${title}\n${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`;
+  };
+
+  async function api(path, token, body) {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    return { status: res.status, json };
+  }
+
+  document.getElementById('pay').addEventListener('click', async () => {
+    const token = document.getElementById('token').value.trim();
+    const bookingId = document.getElementById('bookingId').value.trim();
+    logEl.textContent = 'Starting...';
+    if (!token || !bookingId) return log('Error', 'Fill in both fields.');
+
+    // Step 1: our server creates the Razorpay order. The amount comes from
+    // the server's database, not from this page.
+    const order = await api('/api/payments/order', token, { bookingId });
+    log(`1) Create order -> ${order.status}`, order.json);
+    if (order.status !== 201) return;
+
+    const { keyId, orderId, amount, currency } = order.json.data;
+
+    // Step 2: open Razorpay's popup for that order.
+    const checkout = new Razorpay({
+      key: keyId,
+      order_id: orderId,
+      amount,
+      currency,
+      name: 'Car Rental',
+      description: `Booking ${bookingId}`,
+      theme: { color: '#2563eb' },
+
+      // Step 3: Razorpay calls this after a successful payment. We send the
+      // three values to our server, which verifies the signature.
+      handler: async (response) => {
+        log('2) Razorpay returned', response);
+        const verify = await api('/api/payments/verify', token, response);
+        log(`3) Verify -> ${verify.status}`, verify.json);
+      },
+      modal: { ondismiss: () => log('Popup closed', 'No payment made. The booking stays pending until its hold expires.') },
+    });
+
+    checkout.on('payment.failed', (r) => log('Payment failed', r.error));
+    checkout.open();
+  });
+
+  // Mock mode: no popup, the server confirms the booking directly.
+  document.getElementById('mock').addEventListener('click', async () => {
+    const token = document.getElementById('token').value.trim();
+    const bookingId = document.getElementById('bookingId').value.trim();
+    logEl.textContent = 'Starting mock payment...';
+    if (!token || !bookingId) return log('Error', 'Fill in both fields.');
+    const result = await api('/api/payments/mock-confirm', token, { bookingId });
+    log(`Mock confirm -> ${result.status}`, result.json);
+    if (result.status === 404 && result.json.message?.startsWith('Route not found')) {
+      log('Note', 'Mock mode is off because Razorpay keys are set. Use "Pay with Razorpay" instead.');
+    }
+  });
+</script>
+</body>
+</html>
