@@ -1,0 +1,27 @@
+{
+  "trained_at": "2026-11-08T13:56:59+00:00",
+  "train_rows": 17020,
+  "test_rows": 3680,
+  "test_period": "2026-05-01 .. 2026-10-31",
+  "model": {
+    "mae": 0.0491,
+    "r2": 0.8645
+  },
+  "baseline": {
+    "mae": 0.0764,
+    "r2": 0.6797
+  },
+  "features": [
+    "city",
+    "car_type",
+    "day_of_week",
+    "month",
+    "is_weekend",
+    "days_to_holiday",
+    "is_holiday_window",
+    "doy_sin",
+    "doy_cos"
+  ],
+  "data": "synthetic (see training/generate_data.py)",
+  "version": "20261108135701"
+}

@@ -26,6 +26,16 @@ export const protect = asyncHandler(async (req, _res, next) => {
   next();
 });
 
+// optionalAuth: like protect, but a visitor without a token is allowed in
+// (req.user stays undefined). Used where logged-in users get a personalised
+// answer and everyone else a general one, e.g. recommendations.
+// A token that IS sent but is invalid is still rejected, so a broken login
+// is noticed instead of silently treated as "logged out".
+export const optionalAuth = (req, res, next) => {
+  if (!req.headers.authorization) return next();
+  return protect(req, res, next);
+};
+
 // authorize: is this user allowed to do this? (authorization)
 // Usage: router.post('/cars', protect, authorize('admin'), createCar)
 export const authorize =

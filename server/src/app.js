@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes.js';
 import carRoutes from './routes/car.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import recommendationRoutes from './routes/recommendation.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 // app.js builds the Express app; server.js starts it.
@@ -34,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/cars', carRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 // These two must come last: unmatched routes, then all errors.
 app.use(notFound);

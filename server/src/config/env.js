@@ -23,6 +23,11 @@ export const env = Object.freeze({
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
+  ml: {
+    url: process.env.ML_SERVICE_URL || 'http://localhost:8000',
+    key: process.env.ML_SERVICE_KEY, // shared secret, sent as X-Internal-Key
+    timeoutMs: Number(process.env.ML_TIMEOUT_MS) || 2000,
+  },
   razorpay: {
     keyId: process.env.RAZORPAY_KEY_ID, // public: the browser needs it to open the popup
     keySecret: process.env.RAZORPAY_KEY_SECRET, // private: signs and verifies payments

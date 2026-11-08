@@ -57,6 +57,15 @@ const bookingSchema = new mongoose.Schema(
     // changes never affect a booking the user already agreed to.
     pricePerDay: { type: Number, required: true },
     totalPrice: { type: Number, required: true },
+    // HOW the price was decided, kept for receipts, support and auditing
+    // ("why did I pay ₹12,768?") and to compare model versions later.
+    pricing: {
+      source: { type: String, enum: ['ml', 'fallback'] },
+      baseRate: Number,
+      avgMultiplier: Number,
+      modelVersion: String,
+      reasons: [String],
+    },
 
     status: { type: String, enum: BOOKING_STATUSES, default: 'pending' },
     holdExpiresAt: { type: Date }, // only meaningful while pending

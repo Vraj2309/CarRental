@@ -4,6 +4,7 @@ import { Car } from '../models/Car.js';
 import { ApiError } from '../utils/ApiError.js';
 import { todayInIndia, addDays, daysBetween, formatDay } from '../utils/dates.js';
 import { refundBooking } from './payment.service.js';
+import { quoteForCar } from './pricing.service.js';
 
 export const MAX_RENTAL_DAYS = 30;
 export const MAX_DAYS_AHEAD = 180;
@@ -13,7 +14,7 @@ export const MAX_ACTIVE_HOLDS = 3;
 // Fields of the car to show inside a booking.
 const CAR_SUMMARY = 'brand model type city images pricePerDay';
 
-function checkDateRules(start, end) {
+export function checkDateRules(start, end) {
   const today = todayInIndia();
   const days = daysBetween(start, end);
   if (start < today) throw new ApiError(400, 'Pickup date cannot be in the past');
@@ -38,6 +39,15 @@ export async function createBooking(userId, { carId, startDate, endDate }) {
     throw new ApiError(429, 'You have too many unpaid bookings. Pay for or cancel one first.');
   }
 
+  // Price the rental BEFORE the transaction. Calling another service inside
+  // a transaction would keep it open (and the car locked) while we wait on
+  // the network. If the ML service is down, this returns the flat base price.
+  const car = await Car.findOne({ _id: carId, isActive: true })
+    .select('city type pricePerDay')
+    .lean();
+  if (!car) throw new ApiError(404, 'Car not found');
+  const quote = await quoteForCar(car, startDate, endDate);
+
   const session = await mongoose.startSession();
   let booking;
   try {
@@ -46,12 +56,12 @@ export async function createBooking(userId, { carId, startDate, endDate }) {
     await session.withTransaction(async () => {
       // 1) Claim the car by WRITING to it, so two simultaneous bookings of the
       //    same car collide and run one after the other (see Phase 3 notes).
-      const car = await Car.findOneAndUpdate(
+      const locked = await Car.findOneAndUpdate(
         { _id: carId, isActive: true },
         { $inc: { bookingVersion: 1 } },
-        { session, new: true }
-      ).select('pricePerDay');
-      if (!car) throw new ApiError(404, 'Car not found');
+        { session }
+      ).select('_id');
+      if (!locked) throw new ApiError(404, 'Car not found');
 
       // 2) Any confirmed booking, or any pending one still on hold?
       const clash = await Booking.exists(blockingFilter(carId, startDate, endDate)).session(session);
@@ -66,8 +76,15 @@ export async function createBooking(userId, { carId, startDate, endDate }) {
             startDate,
             endDate,
             days,
-            pricePerDay: car.pricePerDay,
-            totalPrice: days * car.pricePerDay,
+            pricePerDay: Math.round(quote.totalPrice / days), // average per day
+            totalPrice: quote.totalPrice,
+            pricing: {
+              source: quote.source, // "ml" or "fallback"
+              baseRate: car.pricePerDay,
+              avgMultiplier: quote.avgMultiplier,
+              modelVersion: quote.modelVersion,
+              reasons: quote.reasons,
+            },
             status: 'pending',
             holdExpiresAt: new Date(Date.now() + HOLD_MINUTES * 60 * 1000),
           },

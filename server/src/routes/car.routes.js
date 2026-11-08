@@ -14,6 +14,8 @@ import { uploadCarImages } from '../middleware/upload.js';
 import { createCarSchema, updateCarSchema, listCarsQuerySchema } from '../validators/car.validator.js';
 import { bookedDates } from '../controllers/booking.controller.js';
 import { bookedDatesQuerySchema } from '../validators/booking.validator.js';
+import { getQuote } from '../controllers/ai.controller.js';
+import { quoteQuerySchema } from '../validators/pricing.validator.js';
 
 const router = Router();
 
@@ -22,6 +24,8 @@ router.get('/', validate(listCarsQuerySchema, 'query'), listCars);
 router.get('/:id', getCar);
 // Public calendar data: which days is this car already taken?
 router.get('/:id/booked-dates', validate(bookedDatesQuerySchema, 'query'), bookedDates);
+// Public: dynamic price for given dates, before booking.
+router.get('/:id/quote', validate(quoteQuerySchema, 'query'), getQuote);
 
 // Admin only: protect (who are you?) runs before authorize (are you allowed?).
 const adminOnly = [protect, authorize('admin')];
