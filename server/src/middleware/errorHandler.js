@@ -18,6 +18,17 @@ export function errorHandler(err, _req, res, _next) {
     message = `An account with this ${field} already exists`;
   }
 
+  // File upload problems from multer: too big, too many files, wrong field name
+  if (err.name === 'MulterError') {
+    status = 400;
+    const messages = {
+      LIMIT_FILE_SIZE: 'Each image must be 5 MB or smaller',
+      LIMIT_FILE_COUNT: 'You can upload at most 5 images at once',
+      LIMIT_UNEXPECTED_FILE: 'Send files in a form field named "images"',
+    };
+    message = messages[err.code] || err.message;
+  }
+
   // Invalid ObjectId in a URL, e.g. /api/cars/not-a-real-id
   if (err.name === 'CastError') {
     status = 400;

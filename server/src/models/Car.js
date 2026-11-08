@@ -6,13 +6,12 @@ export const CAR_TYPES = ['hatchback', 'sedan', 'suv', 'muv', 'luxury'];
 export const FUEL_TYPES = ['petrol', 'diesel', 'cng', 'electric'];
 export const TRANSMISSIONS = ['manual', 'automatic'];
 
-const imageSchema = new mongoose.Schema(
-  {
-    url: { type: String, required: true },
-    publicId: { type: String }, // Cloudinary id, needed to delete the file later (Phase 2B)
-  },
-  { _id: false }
-);
+// Each image gets its own _id, so the admin can delete one specific image
+// with DELETE /api/cars/:id/images/:imageId.
+const imageSchema = new mongoose.Schema({
+  url: { type: String, required: true },
+  publicId: { type: String, required: true }, // Cloudinary's id, needed to delete the file
+});
 
 const carSchema = new mongoose.Schema(
   {

@@ -1,7 +1,16 @@
 import { Router } from 'express';
-import { listCars, getCar, createCar, updateCar, deleteCar } from '../controllers/car.controller.js';
+import {
+  listCars,
+  getCar,
+  createCar,
+  updateCar,
+  deleteCar,
+  uploadImages,
+  deleteImage,
+} from '../controllers/car.controller.js';
 import { validate } from '../middleware/validate.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { uploadCarImages } from '../middleware/upload.js';
 import { createCarSchema, updateCarSchema, listCarsQuerySchema } from '../validators/car.validator.js';
 
 const router = Router();
@@ -11,8 +20,15 @@ router.get('/', validate(listCarsQuerySchema, 'query'), listCars);
 router.get('/:id', getCar);
 
 // Admin only: protect (who are you?) runs before authorize (are you allowed?).
-router.post('/', protect, authorize('admin'), validate(createCarSchema), createCar);
-router.patch('/:id', protect, authorize('admin'), validate(updateCarSchema), updateCar);
-router.delete('/:id', protect, authorize('admin'), deleteCar);
+const adminOnly = [protect, authorize('admin')];
+
+router.post('/', ...adminOnly, validate(createCarSchema), createCar);
+router.patch('/:id', ...adminOnly, validate(updateCarSchema), updateCar);
+router.delete('/:id', ...adminOnly, deleteCar);
+
+// Images. uploadCarImages runs AFTER the auth checks, so a stranger's
+// 5 MB files are rejected before we even read them into memory.
+router.post('/:id/images', ...adminOnly, uploadCarImages, uploadImages);
+router.delete('/:id/images/:imageId', ...adminOnly, deleteImage);
 
 export default router;

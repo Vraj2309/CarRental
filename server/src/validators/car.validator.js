@@ -15,10 +15,8 @@ export const createCarSchema = z.object({
   city: z.string().trim().min(2).max(40),
   pricePerDay: z.number().int('Price must be whole rupees').min(500).max(50000),
   features: z.array(z.string().trim().min(1).max(40)).max(15).default([]),
-  images: z
-    .array(z.object({ url: z.string().url(), publicId: z.string().optional() }))
-    .max(8)
-    .default([]),
+  // No "images" field here: images are added only through the upload route,
+  // so every image is guaranteed to be a real file on our Cloudinary account.
 });
 
 // PATCH = partial update: every field optional, but at least one must be sent.

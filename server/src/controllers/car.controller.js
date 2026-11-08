@@ -1,5 +1,6 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import * as carService from '../services/car.service.js';
+import * as imageService from '../services/image.service.js';
 
 export const listCars = asyncHandler(async (req, res) => {
   const result = await carService.listCars(req.validatedQuery);
@@ -18,6 +19,17 @@ export const createCar = asyncHandler(async (req, res) => {
 
 export const updateCar = asyncHandler(async (req, res) => {
   const car = await carService.updateCar(req.params.id, req.body);
+  res.json({ success: true, data: { car } });
+});
+
+export const uploadImages = asyncHandler(async (req, res) => {
+  // multer has already put the files on req.files
+  const car = await imageService.addCarImages(req.params.id, req.files);
+  res.status(201).json({ success: true, data: { car } });
+});
+
+export const deleteImage = asyncHandler(async (req, res) => {
+  const car = await imageService.removeCarImage(req.params.id, req.params.imageId);
   res.json({ success: true, data: { car } });
 });
 
